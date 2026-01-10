@@ -1,3 +1,4 @@
+name: Security Scans (Trivy)
 on:
   push:
     branches: [main, dev]
