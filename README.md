@@ -1,6 +1,7 @@
 # Fintech-Merchant-Api
 Exposes API endpoints for merchants
 
+
 # Add Security Scanning Hooks to expose API endpoints 
 
 # Security Scans Workflow (Trivy)
