@@ -1,6 +1,8 @@
 # Fintech-Merchant-Api
+
 Exposes API endpoints for merchants
 
+<<<<<<< HEAD
 
 # Add Security Scanning Hooks to expose API endpoints 
 
@@ -43,3 +45,8 @@ The workflow performs multiple types of security scans to ensure the repository 
 
 
 
+=======
+## Specification
+
+[Tech Spec](SPEC.md)
+>>>>>>> main
