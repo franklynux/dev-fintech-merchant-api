@@ -1,118 +1,117 @@
 package com.merchant.service;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.slf4j.MDC;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
- * Audit Logging Service
- * 
- * Provides structured audit logging for:
- * - Payment transactions
- * - API key operations
- * - Authentication events
- * - Sensitive operations
- * 
- * Logs are JSON-formatted for easy parsing and analysis
+ * Audit Service
+ * Handles audit logging for security and compliance
  */
 @Service
+@RequiredArgsConstructor
 @Slf4j
 public class AuditService {
     
-    private static final Logger AUDIT_LOG = LoggerFactory.getLogger("AUDIT");
+    // In production, this should write to a dedicated audit log table/system
     
-    public void logPaymentCreated(String paymentId, String merchantId, String amount) {
-        Map<String, Object> auditData = new HashMap<>();
-        auditData.put("event", "payment.created");
-        auditData.put("payment_id", paymentId);
-        auditData.put("merchant_id", merchantId);
-        auditData.put("amount", amount);
-        auditData.put("timestamp", LocalDateTime.now());
+    /**
+     * Log successful authentication
+     * 
+     * @param merchantId Merchant identifier
+     * @param email Merchant email
+     */
+    public void logAuthenticationSuccess(String merchantId, String email) {
+        log.info("AUDIT: Authentication SUCCESS - Merchant ID: {}, Email: {}, Timestamp: {}", 
+                merchantId, email, LocalDateTime.now());
         
-        MDC.put("payment_id", paymentId);
-        MDC.put("merchant_id", merchantId);
-        
-        AUDIT_LOG.info("Payment created: {}", auditData);
-        
-        MDC.clear();
+        // TODO: In production, save to audit_log table
+        // auditRepository.save(new AuditLog(merchantId, "AUTH_SUCCESS", email, LocalDateTime.now()));
     }
     
-    public void logPaymentCompleted(String paymentId, String merchantId) {
-        Map<String, Object> auditData = new HashMap<>();
-        auditData.put("event", "payment.completed");
-        auditData.put("payment_id", paymentId);
-        auditData.put("merchant_id", merchantId);
-        auditData.put("timestamp", LocalDateTime.now());
+    /**
+     * Log failed authentication attempt
+     * 
+     * @param email Attempted email
+     * @param reason Failure reason
+     */
+    public void logAuthenticationFailure(String email, String reason) {
+        log.warn("AUDIT: Authentication FAILURE - Email: {}, Reason: {}, Timestamp: {}", 
+                email, reason, LocalDateTime.now());
         
-        AUDIT_LOG.info("Payment completed: {}", auditData);
+        // TODO: In production, save to audit_log table
+        // auditRepository.save(new AuditLog(null, "AUTH_FAILURE", email, reason, LocalDateTime.now()));
     }
     
-    public void logPaymentFailed(String paymentId, String merchantId, String reason) {
-        Map<String, Object> auditData = new HashMap<>();
-        auditData.put("event", "payment.failed");
-        auditData.put("payment_id", paymentId);
-        auditData.put("merchant_id", merchantId);
-        auditData.put("failure_reason", reason);
-        auditData.put("timestamp", LocalDateTime.now());
+    /**
+     * Log merchant logout
+     * 
+     * @param merchantId Merchant identifier
+     */
+    public void logLogout(String merchantId) {
+        log.info("AUDIT: Logout - Merchant ID: {}, Timestamp: {}", 
+                merchantId, LocalDateTime.now());
         
-        AUDIT_LOG.warn("Payment failed: {}", auditData);
+        // TODO: In production, save to audit_log table
+        // auditRepository.save(new AuditLog(merchantId, "LOGOUT", null, LocalDateTime.now()));
     }
     
-    public void logRefund(String paymentId, String merchantId, String amount) {
-        Map<String, Object> auditData = new HashMap<>();
-        auditData.put("event", "payment.refunded");
-        auditData.put("payment_id", paymentId);
-        auditData.put("merchant_id", merchantId);
-        auditData.put("refund_amount", amount);
-        auditData.put("timestamp", LocalDateTime.now());
-        
-        AUDIT_LOG.info("Refund processed: {}", auditData);
+    /**
+     * Log merchant creation
+     * 
+     * @param merchantId Merchant identifier
+     * @param email Merchant email
+     */
+    public void logMerchantCreation(String merchantId, String email) {
+        log.info("AUDIT: Merchant CREATED - Merchant ID: {}, Email: {}, Timestamp: {}", 
+                merchantId, email, LocalDateTime.now());
     }
     
-    public void logApiKeyCreated(String apiKeyId, String merchantId, String environment) {
-        Map<String, Object> auditData = new HashMap<>();
-        auditData.put("event", "api_key.created");
-        auditData.put("api_key_id", apiKeyId);
-        auditData.put("merchant_id", merchantId);
-        auditData.put("environment", environment);
-        auditData.put("timestamp", LocalDateTime.now());
-        
-        AUDIT_LOG.info("API key created: {}", auditData);
+    /**
+     * Log merchant update
+     * 
+     * @param merchantId Merchant identifier
+     * @param action Action performed
+     */
+    public void logMerchantUpdate(String merchantId, String action) {
+        log.info("AUDIT: Merchant UPDATE - Merchant ID: {}, Action: {}, Timestamp: {}", 
+                merchantId, action, LocalDateTime.now());
     }
     
-    public void logApiKeyRevoked(String apiKeyId, String merchantId) {
-        Map<String, Object> auditData = new HashMap<>();
-        auditData.put("event", "api_key.revoked");
-        auditData.put("api_key_id", apiKeyId);
-        auditData.put("merchant_id", merchantId);
-        auditData.put("timestamp", LocalDateTime.now());
-        
-        AUDIT_LOG.warn("API key revoked: {}", auditData);
+    /**
+     * Log merchant deletion/deactivation
+     * 
+     * @param merchantId Merchant identifier
+     */
+    public void logMerchantDeletion(String merchantId) {
+        log.warn("AUDIT: Merchant DELETED/DEACTIVATED - Merchant ID: {}, Timestamp: {}", 
+                merchantId, LocalDateTime.now());
     }
     
-    public void logAuthenticationFailure(String ipAddress, String reason) {
-        Map<String, Object> auditData = new HashMap<>();
-        auditData.put("event", "auth.failed");
-        auditData.put("ip_address", ipAddress);
-        auditData.put("reason", reason);
-        auditData.put("timestamp", LocalDateTime.now());
+    /**
+     * Log suspicious activity
+     * 
+     * @param merchantId Merchant identifier
+     * @param activity Description of suspicious activity
+     */
+    public void logSuspiciousActivity(String merchantId, String activity) {
+        log.error("AUDIT: SUSPICIOUS ACTIVITY - Merchant ID: {}, Activity: {}, Timestamp: {}", 
+                merchantId, activity, LocalDateTime.now());
         
-        AUDIT_LOG.warn("Authentication failed: {}", auditData);
+        // TODO: In production, trigger alerts
     }
     
-    public void logRateLimitExceeded(String clientId, String endpoint) {
-        Map<String, Object> auditData = new HashMap<>();
-        auditData.put("event", "rate_limit.exceeded");
-        auditData.put("client_id", clientId);
-        auditData.put("endpoint", endpoint);
-        auditData.put("timestamp", LocalDateTime.now());
-        
-        AUDIT_LOG.warn("Rate limit exceeded: {}", auditData);
+    /**
+     * Log API access
+     * 
+     * @param merchantId Merchant identifier
+     * @param endpoint API endpoint accessed
+     * @param method HTTP method
+     */
+    public void logApiAccess(String merchantId, String endpoint, String method) {
+        log.debug("AUDIT: API Access - Merchant ID: {}, Endpoint: {} {}, Timestamp: {}", 
+                merchantId, method, endpoint, LocalDateTime.now());
     }
 }

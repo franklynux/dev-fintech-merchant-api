@@ -1,25 +1,26 @@
-version: '3.8'
-
 services:
+  # PostgreSQL Database
   postgres:
-    image: postgres:16-alpine
+    image: postgres:15-alpine
     container_name: merchant-postgres
     environment:
-      POSTGRES_DB: merchant_db
-      POSTGRES_USER: merchant_user
-      POSTGRES_PASSWORD: merchant_pass
+      POSTGRES_DB: merchantdb
+      POSTGRES_USER: merchant
+      POSTGRES_PASSWORD: merchant123  # Must match application.yml
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+    networks:
+      - merchant-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U merchant_user"]
+      test: ["CMD-SHELL", "pg_isready -U merchant -d merchantdb"]
       interval: 10s
       timeout: 5s
       retries: 5
-    networks:
-      - merchant-network
 
+  # Redis Cache
   redis:
     image: redis:7-alpine
     container_name: merchant-redis
@@ -27,31 +28,32 @@ services:
       - "6379:6379"
     volumes:
       - redis_data:/data
-    command: redis-server --appendonly yes
+    networks:
+      - merchant-network
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
-      timeout: 3s
+      timeout: 5s
       retries: 5
-    networks:
-      - merchant-network
 
+  # Merchant API Application
   merchant-api:
     build:
       context: .
       dockerfile: Dockerfile
     container_name: merchant-api
+    ports:
+      - "8081:8080"  # Host:Container
     environment:
       SPRING_PROFILES_ACTIVE: docker
-      DB_HOST: postgres
-      DB_PORT: 5432
-      DB_NAME: merchant_db
-      DB_USERNAME: merchant_user
-      DB_PASSWORD: merchant_pass
+      DATABASE_URL: jdbc:postgresql://postgres:5432/merchantdb
+      DATABASE_USERNAME: merchant
+      DATABASE_PASSWORD: merchant123  # MUST MATCH postgres service
       REDIS_HOST: redis
       REDIS_PORT: 6379
-    ports:
-      - "8080:8080"
+      JWT_SECRET: your-production-secret-key-at-least-32-characters-long-change-this
+      DDL_AUTO: update
+      LOG_LEVEL: INFO
     depends_on:
       postgres:
         condition: service_healthy
@@ -61,10 +63,42 @@ services:
       - merchant-network
     restart: unless-stopped
 
-volumes:
-  postgres_data:
-  redis_data:
+  # Prometheus Monitoring
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: merchant-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+    networks:
+      - merchant-network
+    restart: unless-stopped
+
+  # Grafana Dashboards
+  grafana:
+    image: grafana/grafana:latest
+    container_name: merchant-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_USERS_ALLOW_SIGN_UP: false
+    volumes:
+      - grafana_data:/var/lib/grafana
+    networks:
+      - merchant-network
+    restart: unless-stopped
 
 networks:
   merchant-network:
     driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:
+  prometheus_data:
+  grafana_data:
