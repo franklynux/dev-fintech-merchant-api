@@ -1,17 +1,16 @@
 # Fintech-Merchant-Api
 
+## Specification
+
+[Tech Spec](SPEC.md)
+
 Exposes API endpoints for merchants
 
-<<<<<<< HEAD
-
-# Add Security Scanning Hooks to expose API endpoints 
-
-# Security Scans Workflow (Trivy)
+## Security Scans Workflow (Trivy)
 
 This project includes a GitHub Actions workflow for automated security scanning using **Trivy**. The workflow is triggered automatically on every **push** and **pull request** to any branch.
 
-## Workflow Overview
-### The workflow is configured in yaml 
+## Workflow Overview - configured in yaml 
 
 The workflow performs multiple types of security scans to ensure the repository and its configuration are safe from vulnerabilities and misconfigurations. The main steps are:
 
@@ -44,9 +43,5 @@ The workflow performs multiple types of security scans to ensure the repository 
 - This ensures that code merged into the repository meets security standards and reduces the risk of introducing vulnerabilities.
 
 
+## How to run
 
-=======
-## Specification
-
-[Tech Spec](SPEC.md)
->>>>>>> main
