@@ -1,7 +1,14 @@
+server:
+  port: ${SERVER_PORT}
+
+base:
+  path: ${BASE_URL}
+
 spring:
   datasource:
-    url: jdbc:postgresql://postgres:5432/merchant_db
-  
+    username: ${POSTGRES_USER}
+    password: ${POSTGRES_PASSWORD}
+
   data:
     redis:
       host: redis

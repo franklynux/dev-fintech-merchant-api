@@ -2,13 +2,13 @@ services:
   # PostgreSQL Database
   postgres:
     image: postgres:15-alpine
-    container_name: merchant-postgres
+    container_name: fintech-merchant-postgres
     environment:
       POSTGRES_DB: merchantdb
-      POSTGRES_USER: merchant
-      POSTGRES_PASSWORD: merchant123  # Must match application.yml
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
@@ -23,9 +23,9 @@ services:
   # Redis Cache
   redis:
     image: redis:7-alpine
-    container_name: merchant-redis
+    container_name: fintech-merchant-redis
     ports:
-      - "6379:6379"
+      - "6380:6379"
     volumes:
       - redis_data:/data
     networks:
@@ -41,17 +41,17 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: merchant-api
+    container_name: fintech-merchant-api
     ports:
-      - "8081:8080"  # Host:Container
+      - "7000:7000"
     environment:
       SPRING_PROFILES_ACTIVE: docker
       DATABASE_URL: jdbc:postgresql://postgres:5432/merchantdb
-      DATABASE_USERNAME: merchant
-      DATABASE_PASSWORD: merchant123  # MUST MATCH postgres service
+      DATABASE_USERNAME: ${POSTGRES_USER}
+      DATABASE_PASSWORD: ${POSTGRES_PASSWORD}
       REDIS_HOST: redis
       REDIS_PORT: 6379
-      JWT_SECRET: your-production-secret-key-at-least-32-characters-long-change-this
+      JWT_SECRET: ${JWT_SECRET}
       DDL_AUTO: update
       LOG_LEVEL: INFO
     depends_on:
@@ -63,36 +63,6 @@ services:
       - merchant-network
     restart: unless-stopped
 
-  # Prometheus Monitoring
-  prometheus:
-    image: prom/prometheus:latest
-    container_name: merchant-prometheus
-    ports:
-      - "9090:9090"
-    volumes:
-      - prometheus_data:/prometheus
-    command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-      - '--storage.tsdb.path=/prometheus'
-    networks:
-      - merchant-network
-    restart: unless-stopped
-
-  # Grafana Dashboards
-  grafana:
-    image: grafana/grafana:latest
-    container_name: merchant-grafana
-    ports:
-      - "3000:3000"
-    environment:
-      GF_SECURITY_ADMIN_PASSWORD: admin
-      GF_USERS_ALLOW_SIGN_UP: false
-    volumes:
-      - grafana_data:/var/lib/grafana
-    networks:
-      - merchant-network
-    restart: unless-stopped
-
 networks:
   merchant-network:
     driver: bridge
@@ -100,5 +70,3 @@ networks:
 volumes:
   postgres_data:
   redis_data:
-  prometheus_data:
-  grafana_data:

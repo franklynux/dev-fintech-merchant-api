@@ -1,14 +1,20 @@
+server:
+  port: ${SERVER_PORT}
+
+base:
+  path: ${BASE_URL}
+
 spring:
   application:
     name: merchant-api
   
   profiles:
-    active: ${SPRING_PROFILES_ACTIVE:dev}
+    active: ${SPRING_PROFILES_ACTIVE}
   
   datasource:
     url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/merchantdb}
-    username: ${DATABASE_USERNAME:merchant}
-    password: ${DATABASE_PASSWORD:merchant123}
+    username: ${DATABASE_USERNAME}
+    password: ${DATABASE_PASSWORD}
     driver-class-name: org.postgresql.Driver
     hikari:
       maximum-pool-size: 10
@@ -26,16 +32,12 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
   
-  # Server configuration - FIXED
-  server:
-    port: ${SERVER_PORT:8080}
-  
   # Redis configuration
   data:
     redis:
       host: ${REDIS_HOST:localhost}
       port: ${REDIS_PORT:6379}
-      password: ${REDIS_PASSWORD:}
+      password: ${REDIS_PASSWORD}
       timeout: 60000ms
       lettuce:
         pool:
@@ -103,9 +105,6 @@ spring:
     activate:
       on-profile: dev
 
-server:
-  port: 8080
-
 logging:
   level:
     com.merchant: DEBUG
@@ -118,22 +117,15 @@ spring:
     activate:
       on-profile: docker
 
-server:
-  port: 8080  # Container internal port
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://postgres:5432/merchantdb}
+    username: ${POSTGRES_USER}
+    password: ${POSTGRES_PASSWORD}
 
-datasource:
-  url: jdbc:postgresql://postgres:5432/merchantdb
-  
-data:
-  redis:
-    host: redis
-    port: 6379
-
-logging:
-  level:
-    com.merchant: INFO
-    org.hibernate.SQL: INFO
-
+  data:
+    redis:
+      host: ${REDIS_HOST:redis}
+      port: ${REDIS_PORT:6379}
 ---
 # Production Profile
 spring:
@@ -141,13 +133,10 @@ spring:
     activate:
       on-profile: prod
 
-server:
-  port: 8080
-
-jpa:
-  hibernate:
-    ddl-auto: validate
-  show-sql: false
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
 
 logging:
   level:
