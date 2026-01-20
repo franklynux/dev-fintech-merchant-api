@@ -45,3 +45,59 @@ The workflow performs multiple types of security scans to ensure the repository 
 
 ## How to run
 
+
+## How to run
+
+### Prerequisites
+
+* Java 17
+* Maven 3.9+
+* Docker
+* Docker Compose
+
+### Running Natively
+
+1.  **Start Dependencies**: Ensure PostgreSQL and Redis are running locally.
+    *   PostgreSQL: Port `5432`, Database `merchantdb`
+    *   Redis: Port `6379`
+
+2.  **Run the Application**:
+    ```bash
+    # Set required environment variables
+    cp .env.example .env
+
+    # Run with Maven
+    mvn clean package
+    mvn spring-boot:run
+    ```
+    The service will be available at `http://localhost:7000`.
+
+3.  **Access Health Check Endpoint**:
+    ```bash
+    curl http://localhost:7000/actuator/health
+    curl http://localhost:7000/system/health/
+    ```
+
+### Running with Docker Compose
+
+This sets up the API, PostgreSQL, Redis, Prometheus, and Grafana.
+
+1.  **Configure Environment**:
+    Create a `.env` file in the root directory with the following variables:
+    ```properties
+    POSTGRES_DB=
+    POSTGRES_USER=
+    POSTGRES_PASSWORD=
+    JWT_SECRET=
+    ```
+
+2.  **Start Services**:
+    ```bash
+    docker-compose up --build
+    ```
+
+3.  **Access Endpoints**:
+    *   **API Home**: http://localhost:7000
+    *   **Swagger UI**: http://localhost:7000/swagger-ui.html
+    *   **Grafana**: http://localhost:3000
+    *   **Prometheus**: http://localhost:9090

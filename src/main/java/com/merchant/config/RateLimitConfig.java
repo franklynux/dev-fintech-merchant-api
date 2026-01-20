@@ -1,6 +1,7 @@
 package com.merchant.config;
 
 import io.github.bucket4j.distributed.proxy.ProxyManager;
+import io.github.bucket4j.distributed.ExpirationAfterWriteStrategy;
 import io.github.bucket4j.redis.lettuce.cas.LettuceBasedProxyManager;
 import io.lettuce.core.RedisClient;
 import io.lettuce.core.api.StatefulRedisConnection;
@@ -14,6 +15,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import java.time.Duration;
 import java.util.Optional;
 
 @Configuration
@@ -49,6 +51,7 @@ public class RateLimitConfig {
             // Build the ProxyManager with proper configuration
             ProxyManager<String> proxyManager = LettuceBasedProxyManager
                     .builderFor(connection)
+                    .withExpirationStrategy(ExpirationAfterWriteStrategy.basedOnTimeForRefillingBucketUpToMax(Duration.ofMinutes(1)))
                     .build();
             
             log.info("✅ Rate limiting enabled successfully with Redis backend");
