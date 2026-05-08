@@ -1,0 +1,118 @@
+name: Base CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  lint-and-unit-test:
+    name: Lint and Unit Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: PCI-aware log masking
+        shell: bash
+        env:
+          API_KEY: ${{ secrets.API_KEY }}
+          API_SECRET: ${{ secrets.API_SECRET }}
+          SECRET_KEY: ${{ secrets.SECRET_KEY }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
+          TOKEN: ${{ secrets.TOKEN }}
+        run: |
+          set +x
+          sensitive_vars=(API_KEY API_SECRET SECRET_KEY JWT_SECRET DB_PASSWORD DATABASE_URL STRIPE_SECRET_KEY AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY PRIVATE_KEY TOKEN GITHUB_TOKEN)
+          for name in "${sensitive_vars[@]}"; do
+            value="${!name:-}"
+            if [ -n "$value" ]; then
+              echo "::add-mask::$value"
+            fi
+          done
+
+      - name: Setup Node.js
+        if: ${{ hashFiles('package.json') != '' }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - name: Setup Python
+        if: ${{ hashFiles('requirements.txt') != '' }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Setup Java
+        if: ${{ hashFiles('pom.xml') != '' }}
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+
+      - name: Run lint and unit tests
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [ -f package.json ]; then
+            npm ci
+            if npm run | grep -q " lint"; then
+              npm run lint
+            else
+              echo "::warning::No npm lint script found; skipping lint."
+            fi
+
+            if npm run | grep -q " test:unit"; then
+              npm run test:unit
+            elif npm run | grep -q " test"; then
+              npm test -- --ci
+            else
+              echo "::warning::No npm unit test script found; skipping tests."
+            fi
+
+            if npm run | grep -q " build"; then
+              npm run build
+            fi
+            exit 0
+          fi
+
+          if [ -f requirements.txt ]; then
+            python -m pip install --upgrade pip
+            pip install -r requirements.txt
+            pip install ruff pytest
+            ruff check .
+
+            if find . -type f \( -name "test_*.py" -o -name "*_test.py" \) | grep -q .; then
+              pytest -q
+            else
+              echo "::warning::No Python unit tests found; running unittest discovery."
+              python -m unittest discover -s . -p "test*.py"
+            fi
+
+            python -m py_compile $(find . -type f -name "*.py")
+            exit 0
+          fi
+
+          if [ -f pom.xml ]; then
+            mvn -B -ntp -DskipTests checkstyle:check || echo "::warning::Checkstyle not configured cleanly; continuing with compile checks."
+            mvn -B -ntp -DskipTests compile
+            mvn -B -ntp test
+            exit 0
+          fi
+
+          echo "::warning::Unsupported project type. No lint/test runner configured for this repository; skipping."
+          exit 0
